@@ -1,0 +1,27 @@
+flowchart TB
+    IN[Incoming Support Ticket] --> F[Classification Facade]
+    F --> MODE{Mode / Feature Flag}
+    MODE -->|Legacy| L[Legacy Classifier]
+    MODE -->|Canary| G[LLM Gateway]
+    G -->|Circuit closed| P[LLM Provider]
+    P --> V{JSON Schema + Acceptance Policy}
+    V -->|Accepted| S[Selected Classification]
+    G -.->|Timeout / Circuit open| FB[Legacy Fallback]
+    V -.->|Invalid / Rejected| FB
+    FB --> L
+    L --> S
+    S --> A[Monolith Persists and Routes Ticket]
+    F -.->|Asynchronous shadow event| Q[Shadow Evaluation Queue]
+    Q -.-> W[Shadow Worker / Separate LLM Request]
+    W -.-> E[Store Output Only]
+    E -.-> C[Compare with Labeled Reference Data]
+    classDef production fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef legacy fill:#f3f4f6,stroke:#6b7280,color:#111827
+    classDef shadow fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef validation fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef fallback fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
+    class F,MODE,G,P,S,A,IN production
+    class L legacy
+    class Q,W,E,C shadow
+    class V validation
+    class FB fallback
